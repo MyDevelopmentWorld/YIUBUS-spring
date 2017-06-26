@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.co.kr.dao.YbusMapper">
+
+	<!-- 공지사항 조회 -->
+	<select id="getNotice" resultType="notice">
+		select npk, contents,
+		registrant, link, seq, regdate from notice
+	</select>
+	
+	<!-- 안드로이드 초기 실행시 해당 기기가 어느 곳과 데이터통신할지에 대한 정보 -->
+	<select id="getBusInfo" parameterType="java.lang.String"	resultType="staticbusinfo">
+		select bpk, url, term
+		from staticbusinfo
+		where deviceid = #{busId}
+	</select>
+	
+	<!-- 버스시간표뿌리기 위한 데이터 조회 -->
+	<select id="getBusSchedule" parameterType="java.lang.String" resultType="busschedule">
+		select bcpk, bcseq, bctime, bcline, bcperiod 
+		from busschedule
+		where bcperiod=#{type}
+	</select>
+	
+	<!-- 로드뷰뿌리기위한 데이터들 조회 -->
+	<select id="getBsLoadView" parameterType="java.lang.String" resultType="busstoproadview">
+		select bsrpk, bsname, bslat, bslng, panoid, viewpoint, marker ,mlat ,mlng from bsroadview where bsrpk=#{bsrpk}
+	</select>
+	
+	<!-- 기존 데이터는 모드 0으로 만들고 1일때만 조회하기 위함 -->
+ 	<update id="updateIsNew" parameterType="newlocationbean">
+		update newlocation set isnew='0' where bpk = #{bpk}
+	</update>
+	
+	<!-- 버스 위치정보 넣기 -->
+	<insert id="setLocation" parameterType="newlocationbean">
+		insert into newlocation(bpk,abpk,blat,blng,time,isnew) values(#{bpk},#{abpk},#{blat},#{blng},now(),'1')
+	</insert> 
+
+	<!-- 해당 페이지의 오늘날짜에 대한 데이터가 있는지 조회 -->
+	<select id="getViewCount" resultType="viewcount" parameterType="java.lang.String">
+		select vpk, pagename, viewtime, count from viewcount where pagename = #{pagename} and viewtime = CURRENT_DATE( )
+	</select>
+
+	<!-- 새로운 날에는 데이터 입력 -->
+  	<insert id="insertViewCount" parameterType="java.lang.String">
+		insert into viewcount(pagename,viewtime,count) values(#{pagename},CURRENT_DATE( ),1)
+	</insert>
+	
+	<!-- 뷰카운트 테이블 카운팅 -->
+	<update id="updateViewCount" parameterType="java.lang.String">
+		update viewcount set count= count+1 where vpk=#{vpk}
+	</update>
+	
+	<!-- 시내순환버스를 정류장과 조인하여 뿌리는 쿼리 -->
+	<!-- 10분안에 쏜데이터만 확인 -->
+	<select id="getBusStopWithBus" resultType="busstopwithbus" parameterType="java.lang.String">
+	<![CDATA[
+		 select  a.abpk,a.bsrpk, a.bsname, a.seq, a.updown,group_concat(b.busid separator ',') busid
+		 from (select abpk,bsrpk, bsname, seq, updown from andbusstop where line=#{line}) a
+				left join 
+			  (select l.abpk, b.busid from newlocation l , 
+			  	(select bpk,deviceid,busid,line,isturn from newbusinfo where line=#{line}) b 
+			  	where l.bpk=b.bpk and l.isnew='1' and TIMESTAMPDIFF(MINUTE,l.time,now())<10
+			  ) b
+		 on a.abpk = b.abpk
+		 group by a.abpk
+	     order by seq
+	  ]]> 
+	</select>
+	
+	<!-- 시내순환버스만 가져와 지도에 뿌리기 위한 쿼리 -->
+	<!-- 10분안에 쏜데이터만 확인 -->
+	<select id="getBusMap" resultType="busmap" parameterType="java.lang.String">
+	<![CDATA[
+		select lpk, l.bpk, abpk, blat, blng,b.busid, time, isnew 
+		from newlocation l , newbusinfo b
+		where l.bpk=b.bpk and b.line=#{line} and l.isnew='1' and TIMESTAMPDIFF(MINUTE,l.time,now())<10
+	]]>
+	</select>
+	
+	<!-- 시내순환의 모든 정류장리스트 가져옴 -->
+	<select id="getCircleBusStop" resultType="busstop" parameterType="java.lang.String">
+		select abpk,bsname,ablat,ablng,line,seq,updown 
+		from andbusstop
+		where line=(select line from newbusinfo where bpk=#{bpk})
+		order by seq ASC
+	</select>
+	
+	<!-- 해당 bpk가 상행인지 하행인지 알기 위함 -->
+	<select id="getBusTurn" resultType="java.lang.String" parameterType="java.lang.String">
+		select isturn from newbusinfo where bpk = #{bpk}
+	</select>
+	
+	<!-- 턴할때 해당 버스에 상하행여부를 바꿔줌 -->
+	<update id="updateIsTurn" parameterType="hashmap">
+		update newbusinfo set isturn = #{isturn} where bpk=#{bpk}
+	</update>
+	
+</mapper>

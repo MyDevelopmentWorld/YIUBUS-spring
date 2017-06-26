@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <typeAliases>
+        
+        <typeAlias alias="notice" type="com.co.kr.vo.NoticeBean"/>
+        <typeAlias alias="busschedule" type="com.co.kr.vo.BusScheduleBean"/>
+        <typeAlias alias="busstoproadview" type="com.co.kr.vo.BusStopRoadViewBean"/>
+        <typeAlias alias="staticbusinfo" type="com.co.kr.vo.StaticBusInfoBean"/>
+        <typeAlias alias="newlocationbean" type="com.co.kr.vo.NewLocationBean"/>
+        <typeAlias alias="viewcount" type="com.co.kr.vo.ViewCountBean"/>
+        <typeAlias alias="busstopwithbus" type="com.co.kr.vo.BusStopWithBusBean"/>
+        <typeAlias alias="busmap" type="com.co.kr.vo.BusMapBean"/>
+        <typeAlias alias="busstop" type="com.co.kr.vo.BusStopBean"/>
+        
+    </typeAliases>
+
+    <mappers>
+        <mapper resource="com/co/kr/dao/YbusMapper.xml"/>
+    </mappers>
+</configuration>
